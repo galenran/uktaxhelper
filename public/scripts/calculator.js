@@ -1,7 +1,115 @@
-import Chart from 'chart.js/auto';
-import { buildTaxBreakdown, formatCurrency, formatRate } from '../utils/tax';
+// Self-contained client calculator script with CDN Chart.js.
+const PERSONAL_ALLOWANCE = 12570;
+const BASIC_RATE_LIMIT = 50270;
+const HIGHER_RATE_LIMIT = 125140;
+const BASIC_RATE = 0.2;
+const HIGHER_RATE = 0.4;
+const ADDITIONAL_RATE = 0.45;
+const NI_PRIMARY_THRESHOLD = 12570;
+const NI_UPPER_EARNINGS_LIMIT = 50270;
+const NI_MAIN_RATE = 0.08;
+const NI_UPPER_RATE = 0.02;
 
-/** @typedef {'annual' | 'monthly' | 'weekly'} Period */
+const currencyFormatter = new Intl.NumberFormat('en-GB', {
+  style: 'currency',
+  currency: 'GBP',
+  maximumFractionDigits: 2
+});
+
+const formatCurrency = (value) => currencyFormatter.format(value);
+const formatRate = (value) => `${(value * 100).toFixed(0)}%`;
+
+const getPersonalAllowance = (income) => {
+  if (income <= 100000) {
+    return PERSONAL_ALLOWANCE;
+  }
+  const reduced = PERSONAL_ALLOWANCE - (income - 100000) / 2;
+  return Math.max(0, reduced);
+};
+
+const calculateIncomeTax = (income, allowance) => {
+  const taxableIncome = Math.max(0, income - allowance);
+  let remaining = taxableIncome;
+  const bands = [];
+  let totalTax = 0;
+
+  const addBand = (label, rate, ceiling) => {
+    if (remaining <= 0) {
+      return;
+    }
+    const cap = typeof ceiling === 'number' ? Math.max(0, Math.min(remaining, ceiling)) : remaining;
+    const taxed = cap * rate;
+    bands.push({
+      label,
+      rate,
+      taxablePortion: cap,
+      taxDue: taxed
+    });
+    remaining -= cap;
+    totalTax += taxed;
+  };
+
+  const basicBandWidth = BASIC_RATE_LIMIT - allowance;
+  if (basicBandWidth > 0) {
+    addBand('Basic rate 20%', BASIC_RATE, basicBandWidth);
+  }
+
+  const higherBandBase = Math.max(BASIC_RATE_LIMIT, allowance);
+  const higherBandWidth = HIGHER_RATE_LIMIT - higherBandBase;
+  if (higherBandWidth > 0) {
+    addBand('Higher rate 40%', HIGHER_RATE, higherBandWidth);
+  }
+
+  addBand('Additional rate 45%', ADDITIONAL_RATE);
+
+  return {
+    total: totalTax,
+    bands
+  };
+};
+
+const calculateNationalInsurance = (income) => {
+  if (income <= NI_PRIMARY_THRESHOLD) {
+    return 0;
+  }
+
+  const mainBand = Math.min(income, NI_UPPER_EARNINGS_LIMIT) - NI_PRIMARY_THRESHOLD;
+  const upperBand = Math.max(0, income - NI_UPPER_EARNINGS_LIMIT);
+  return mainBand * NI_MAIN_RATE + upperBand * NI_UPPER_RATE;
+};
+
+const buildTaxBreakdown = (grossSalary, pensionRate = 0) => {
+  const cleanSalary = Math.max(0, Number.isFinite(grossSalary) ? grossSalary : 0);
+  const normalisedRate = Math.min(Math.max(pensionRate, 0), 60) / 100;
+  const pensionContribution = cleanSalary * normalisedRate;
+  const salaryAfterPension = cleanSalary - pensionContribution;
+  const allowance = getPersonalAllowance(salaryAfterPension);
+  const { total: incomeTax, bands } = calculateIncomeTax(salaryAfterPension, allowance);
+  const nationalInsurance = calculateNationalInsurance(salaryAfterPension);
+  const takeHomeWithoutPension = cleanSalary - incomeTax - nationalInsurance;
+  const takeHomePay = salaryAfterPension - incomeTax - nationalInsurance;
+
+  return {
+    grossSalary: cleanSalary,
+    salaryAfterPension,
+    pensionContribution,
+    personalAllowance: allowance,
+    taxableIncome: Math.max(0, salaryAfterPension - allowance),
+    incomeTax,
+    nationalInsurance,
+    takeHomePay,
+    takeHomeWithoutPension,
+    taxBands: bands
+  };
+};
+
+let chartModulePromise;
+const loadChart = async () => {
+  if (!chartModulePromise) {
+    chartModulePromise = import('https://cdn.jsdelivr.net/npm/chart.js@4.4.4/+esm');
+  }
+  return chartModulePromise;
+};
 
 const getDivisor = (period) => {
   if (period === 'monthly') {
@@ -13,9 +121,7 @@ const getDivisor = (period) => {
   return 1;
 };
 
-const formatByPeriod = (value, period) => {
-  return formatCurrency(value / getDivisor(period));
-};
+const formatByPeriod = (value, period) => formatCurrency(value / getDivisor(period));
 
 const renderBandTable = (tableBody, period, taxBands) => {
   if (!tableBody) {
@@ -37,8 +143,8 @@ const renderBandTable = (tableBody, period, taxBands) => {
   });
 };
 
-const createChart = (canvas, dataset) => {
-  return new Chart(canvas, {
+const createChart = (ChartLib, canvas, dataset) => {
+  return new ChartLib(canvas, {
     type: 'doughnut',
     data: {
       labels: ['Take-home', 'Income Tax', 'National Insurance', 'Pension'],
@@ -60,7 +166,7 @@ const createChart = (canvas, dataset) => {
   });
 };
 
-const updateChart = (chart, canvas, period, breakdown) => {
+const updateChart = (ChartLib, chart, canvas, period, breakdown) => {
   if (!canvas) {
     return chart;
   }
@@ -74,7 +180,7 @@ const updateChart = (chart, canvas, period, breakdown) => {
   ].map((value) => Number((value / divisor).toFixed(2)));
 
   if (!chart) {
-    return createChart(canvas, dataset);
+    return createChart(ChartLib, canvas, dataset);
   }
 
   chart.data.datasets[0].data = dataset;
@@ -118,7 +224,7 @@ const updateSummary = (fields, breakdown) => {
   }
 };
 
-const initCalculator = (container) => {
+const initCalculator = (ChartLib, container) => {
   if (container.dataset.calculatorInit === 'true') {
     return;
   }
@@ -148,28 +254,31 @@ const initCalculator = (container) => {
   const initialSalary = Number(container.dataset.initialSalary || '0');
   const initialPensionRate = Number(container.dataset.initialPension || '0');
 
-  /** @type {Period} */
   let currentPeriod = 'annual';
   let currentBreakdown = buildTaxBreakdown(initialSalary, initialPensionRate);
-  let chartInstance = updateChart(undefined, chartCanvas, currentPeriod, currentBreakdown);
+  let chartInstance = updateChart(ChartLib, undefined, chartCanvas, currentPeriod, currentBreakdown);
 
   const renderBreakdown = (salary, pensionRate) => {
     currentBreakdown = buildTaxBreakdown(salary, pensionRate);
     updateResultCards(resultFields, currentPeriod, currentBreakdown);
     updateSummary(resultFields, currentBreakdown);
     renderBandTable(tableBody, currentPeriod, currentBreakdown.taxBands);
-    chartInstance = updateChart(chartInstance, chartCanvas, currentPeriod, currentBreakdown);
+    chartInstance = updateChart(ChartLib, chartInstance, chartCanvas, currentPeriod, currentBreakdown);
+  };
+
+  const getPeriodLabel = () => {
+    if (currentPeriod === 'monthly') {
+      return 'Monthly';
+    }
+    if (currentPeriod === 'weekly') {
+      return 'Weekly';
+    }
+    return 'Annual';
   };
 
   const formatShareSummary = () => {
     const divisor = getDivisor(currentPeriod);
-    const periodLabel =
-      currentPeriod === 'annual'
-        ? 'Annual'
-        : currentPeriod === 'monthly'
-        ? 'Monthly'
-        : 'Weekly';
-
+    const periodLabel = getPeriodLabel();
     const formatValue = (value) => formatCurrency(value / divisor);
 
     return [
@@ -259,7 +368,7 @@ const initCalculator = (container) => {
 
       updateResultCards(resultFields, currentPeriod, currentBreakdown);
       renderBandTable(tableBody, currentPeriod, currentBreakdown.taxBands);
-      chartInstance = updateChart(chartInstance, chartCanvas, currentPeriod, currentBreakdown);
+      chartInstance = updateChart(ChartLib, chartInstance, chartCanvas, currentPeriod, currentBreakdown);
     });
   });
 
@@ -273,7 +382,19 @@ const initCalculator = (container) => {
 };
 
 const bootstrap = () => {
-  document.querySelectorAll('[data-calculator]').forEach((container) => initCalculator(container));
+  const containers = document.querySelectorAll('[data-calculator]');
+  if (!containers.length) {
+    return;
+  }
+
+  loadChart()
+    .then((module) => {
+      const ChartLib = module.default;
+      containers.forEach((container) => initCalculator(ChartLib, container));
+    })
+    .catch((error) => {
+      console.error('Failed to load chart library', error);
+    });
 };
 
 if (document.readyState === 'loading') {
