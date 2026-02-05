@@ -1,5 +1,6 @@
 ---
 import { buildTaxBreakdown, formatCurrency, formatRate } from '../utils/tax';
+import calculatorScript from '../scripts/calculator.js?url';
 
 interface Props {
   initialSalary?: number;
@@ -155,6 +156,4 @@ const HeadingTag = headingLevel;
   </section>
 </section>
 
-<script type="module">
-  import '../scripts/calculator.ts';
-</script>
+<script type="module" src={calculatorScript}></script>

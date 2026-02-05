@@ -1,22 +1,9 @@
 import Chart from 'chart.js/auto';
 import { buildTaxBreakdown, formatCurrency, formatRate } from '../utils/tax';
 
-type Period = 'annual' | 'monthly' | 'weekly';
+/** @typedef {'annual' | 'monthly' | 'weekly'} Period */
 
-type ResultFieldMap = {
-  takeHome: HTMLElement | null;
-  incomeTax: HTMLElement | null;
-  ni: HTMLElement | null;
-  pension: HTMLElement | null;
-  gross: HTMLElement | null;
-  salaryAfterPension: HTMLElement | null;
-  allowance: HTMLElement | null;
-  taxable: HTMLElement | null;
-  pensionAnnual: HTMLElement | null;
-  takeHomePrePension: HTMLElement | null;
-};
-
-const getDivisor = (period: Period): number => {
+const getDivisor = (period) => {
   if (period === 'monthly') {
     return 12;
   }
@@ -26,15 +13,11 @@ const getDivisor = (period: Period): number => {
   return 1;
 };
 
-const formatByPeriod = (value: number, period: Period): string => {
+const formatByPeriod = (value, period) => {
   return formatCurrency(value / getDivisor(period));
 };
 
-const renderBandTable = (
-  tableBody: HTMLTableSectionElement | null,
-  period: Period,
-  taxBands: ReturnType<typeof buildTaxBreakdown>['taxBands']
-) => {
+const renderBandTable = (tableBody, period, taxBands) => {
   if (!tableBody) {
     return;
   }
@@ -54,7 +37,7 @@ const renderBandTable = (
   });
 };
 
-const createChart = (canvas: HTMLCanvasElement, dataset: number[]) => {
+const createChart = (canvas, dataset) => {
   return new Chart(canvas, {
     type: 'doughnut',
     data: {
@@ -77,12 +60,7 @@ const createChart = (canvas: HTMLCanvasElement, dataset: number[]) => {
   });
 };
 
-const updateChart = (
-  chart: Chart | undefined,
-  canvas: HTMLCanvasElement | null,
-  period: Period,
-  breakdown: ReturnType<typeof buildTaxBreakdown>
-): Chart | undefined => {
+const updateChart = (chart, canvas, period, breakdown) => {
   if (!canvas) {
     return chart;
   }
@@ -104,11 +82,7 @@ const updateChart = (
   return chart;
 };
 
-const updateResultCards = (
-  fields: ResultFieldMap,
-  period: Period,
-  breakdown: ReturnType<typeof buildTaxBreakdown>
-) => {
+const updateResultCards = (fields, period, breakdown) => {
   if (fields.takeHome) {
     fields.takeHome.textContent = formatByPeriod(breakdown.takeHomePay, period);
   }
@@ -123,10 +97,7 @@ const updateResultCards = (
   }
 };
 
-const updateSummary = (
-  fields: ResultFieldMap,
-  breakdown: ReturnType<typeof buildTaxBreakdown>
-) => {
+const updateSummary = (fields, breakdown) => {
   if (fields.gross) {
     fields.gross.textContent = formatCurrency(breakdown.grossSalary);
   }
@@ -147,21 +118,21 @@ const updateSummary = (
   }
 };
 
-const initCalculator = (container: HTMLElement) => {
+const initCalculator = (container) => {
   if (container.dataset.calculatorInit === 'true') {
     return;
   }
   container.dataset.calculatorInit = 'true';
 
-  const form = container.querySelector<HTMLFormElement>('[data-calculator-form]');
-  const salaryInput = container.querySelector<HTMLInputElement>('#salary-input');
-  const pensionInput = container.querySelector<HTMLInputElement>('#pension-input');
-  const tableBody = container.querySelector<HTMLTableSectionElement>('[data-band-table] tbody');
-  const chartCanvas = container.querySelector<HTMLCanvasElement>('[data-chart]');
-  const periodButtons = Array.from(container.querySelectorAll<HTMLButtonElement>('[data-period]'));
-  const copyButton = container.querySelector<HTMLButtonElement>('[data-copy-results]');
+  const form = container.querySelector('[data-calculator-form]');
+  const salaryInput = container.querySelector('#salary-input');
+  const pensionInput = container.querySelector('#pension-input');
+  const tableBody = container.querySelector('[data-band-table] tbody');
+  const chartCanvas = container.querySelector('[data-chart]');
+  const periodButtons = Array.from(container.querySelectorAll('[data-period]'));
+  const copyButton = container.querySelector('[data-copy-results]');
 
-  const resultFields: ResultFieldMap = {
+  const resultFields = {
     takeHome: container.querySelector('[data-field="take-home"]'),
     incomeTax: container.querySelector('[data-field="income-tax"]'),
     ni: container.querySelector('[data-field="ni"]'),
@@ -177,11 +148,12 @@ const initCalculator = (container: HTMLElement) => {
   const initialSalary = Number(container.dataset.initialSalary || '0');
   const initialPensionRate = Number(container.dataset.initialPension || '0');
 
-  let currentPeriod: Period = 'annual';
+  /** @type {Period} */
+  let currentPeriod = 'annual';
   let currentBreakdown = buildTaxBreakdown(initialSalary, initialPensionRate);
   let chartInstance = updateChart(undefined, chartCanvas, currentPeriod, currentBreakdown);
 
-  const renderBreakdown = (salary: number, pensionRate: number) => {
+  const renderBreakdown = (salary, pensionRate) => {
     currentBreakdown = buildTaxBreakdown(salary, pensionRate);
     updateResultCards(resultFields, currentPeriod, currentBreakdown);
     updateSummary(resultFields, currentBreakdown);
@@ -189,7 +161,7 @@ const initCalculator = (container: HTMLElement) => {
     chartInstance = updateChart(chartInstance, chartCanvas, currentPeriod, currentBreakdown);
   };
 
-  const formatShareSummary = (): string => {
+  const formatShareSummary = () => {
     const divisor = getDivisor(currentPeriod);
     const periodLabel =
       currentPeriod === 'annual'
@@ -198,7 +170,7 @@ const initCalculator = (container: HTMLElement) => {
         ? 'Monthly'
         : 'Weekly';
 
-    const formatValue = (value: number) => formatCurrency(value / divisor);
+    const formatValue = (value) => formatCurrency(value / divisor);
 
     return [
       `UK salary tax breakdown (${periodLabel})`,
@@ -280,7 +252,7 @@ const initCalculator = (container: HTMLElement) => {
         return;
       }
 
-      currentPeriod = period as Period;
+      currentPeriod = period;
       periodButtons.forEach((btn) => {
         btn.setAttribute('aria-pressed', String(btn === button));
       });
@@ -295,16 +267,13 @@ const initCalculator = (container: HTMLElement) => {
     handleCopyResults();
   });
 
-  // Initial paint
   updateResultCards(resultFields, currentPeriod, currentBreakdown);
   updateSummary(resultFields, currentBreakdown);
   renderBandTable(tableBody, currentPeriod, currentBreakdown.taxBands);
 };
 
 const bootstrap = () => {
-  document
-    .querySelectorAll<HTMLElement>('[data-calculator]')
-    .forEach((container) => initCalculator(container));
+  document.querySelectorAll('[data-calculator]').forEach((container) => initCalculator(container));
 };
 
 if (document.readyState === 'loading') {
