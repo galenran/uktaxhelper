@@ -1,6 +1,5 @@
 ---
 import { buildTaxBreakdown, formatCurrency, formatRate } from '../utils/tax';
-import calculatorScriptUrl from '../scripts/calculator.ts?url';
 
 interface Props {
   initialSalary?: number;
@@ -16,7 +15,6 @@ const {
 const breakdown = buildTaxBreakdown(initialSalary, initialPensionRate);
 const widgetId = `calculator-${Math.round(initialSalary)}-${Math.round(initialPensionRate * 10)}`;
 const HeadingTag = headingLevel;
-const calculatorScript = calculatorScriptUrl;
 ---
 <section
   class="card"
@@ -157,4 +155,6 @@ const calculatorScript = calculatorScriptUrl;
   </section>
 </section>
 
-<script type="module" src={calculatorScript}></script>
+<script type="module">
+  import '../scripts/calculator.ts';
+</script>
