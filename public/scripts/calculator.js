@@ -103,14 +103,6 @@ const buildTaxBreakdown = (grossSalary, pensionRate = 0) => {
   };
 };
 
-let chartModulePromise;
-const loadChart = async () => {
-  if (!chartModulePromise) {
-    chartModulePromise = import('https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.esm.js');
-  }
-  return chartModulePromise;
-};
-
 const getDivisor = (period) => {
   if (period === 'monthly') {
     return 12;
@@ -143,7 +135,11 @@ const renderBandTable = (tableBody, period, taxBands) => {
   });
 };
 
-const createChart = (ChartLib, canvas, dataset) => {
+const createChart = (canvas, dataset) => {
+  const ChartLib = window.Chart;
+  if (!ChartLib) {
+    return null;
+  }
   return new ChartLib(canvas, {
     type: 'doughnut',
     data: {
@@ -166,8 +162,12 @@ const createChart = (ChartLib, canvas, dataset) => {
   });
 };
 
-const updateChart = (ChartLib, chart, canvas, period, breakdown) => {
+const updateChart = (chart, canvas, period, breakdown) => {
   if (!canvas) {
+    return chart;
+  }
+
+  if (!window.Chart) {
     return chart;
   }
 
@@ -180,7 +180,7 @@ const updateChart = (ChartLib, chart, canvas, period, breakdown) => {
   ].map((value) => Number((value / divisor).toFixed(2)));
 
   if (!chart) {
-    return createChart(ChartLib, canvas, dataset);
+    return createChart(canvas, dataset);
   }
 
   chart.data.datasets[0].data = dataset;
@@ -224,7 +224,7 @@ const updateSummary = (fields, breakdown) => {
   }
 };
 
-const initCalculator = (ChartLib, container) => {
+const initCalculator = (container) => {
   if (container.dataset.calculatorInit === 'true') {
     return;
   }
@@ -256,14 +256,14 @@ const initCalculator = (ChartLib, container) => {
 
   let currentPeriod = 'annual';
   let currentBreakdown = buildTaxBreakdown(initialSalary, initialPensionRate);
-  let chartInstance = updateChart(ChartLib, undefined, chartCanvas, currentPeriod, currentBreakdown);
+  let chartInstance = updateChart(undefined, chartCanvas, currentPeriod, currentBreakdown);
 
   const renderBreakdown = (salary, pensionRate) => {
     currentBreakdown = buildTaxBreakdown(salary, pensionRate);
     updateResultCards(resultFields, currentPeriod, currentBreakdown);
     updateSummary(resultFields, currentBreakdown);
     renderBandTable(tableBody, currentPeriod, currentBreakdown.taxBands);
-    chartInstance = updateChart(ChartLib, chartInstance, chartCanvas, currentPeriod, currentBreakdown);
+    chartInstance = updateChart(chartInstance, chartCanvas, currentPeriod, currentBreakdown);
   };
 
   const getPeriodLabel = () => {
@@ -368,7 +368,7 @@ const initCalculator = (ChartLib, container) => {
 
       updateResultCards(resultFields, currentPeriod, currentBreakdown);
       renderBandTable(tableBody, currentPeriod, currentBreakdown.taxBands);
-      chartInstance = updateChart(ChartLib, chartInstance, chartCanvas, currentPeriod, currentBreakdown);
+      chartInstance = updateChart(chartInstance, chartCanvas, currentPeriod, currentBreakdown);
     });
   });
 
@@ -387,17 +387,19 @@ const bootstrap = () => {
     return;
   }
 
-  loadChart()
-    .then((module) => {
-      const ChartLib = module.default || module.Chart;
-      if (!ChartLib) {
-        throw new Error('Chart export missing');
-      }
-      containers.forEach((container) => initCalculator(ChartLib, container));
-    })
-    .catch((error) => {
-      console.error('Failed to load chart library', error);
-    });
+  const start = () => {
+    if (!window.Chart) {
+      console.error('Chart.js failed to load');
+      return;
+    }
+    containers.forEach((container) => initCalculator(container));
+  };
+
+  if (window.Chart) {
+    start();
+  } else {
+    window.addEventListener('load', start, { once: true });
+  }
 };
 
 if (document.readyState === 'loading') {
