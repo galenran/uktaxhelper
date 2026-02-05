@@ -106,7 +106,7 @@ const buildTaxBreakdown = (grossSalary, pensionRate = 0) => {
 let chartModulePromise;
 const loadChart = async () => {
   if (!chartModulePromise) {
-    chartModulePromise = import('https://cdn.jsdelivr.net/npm/chart.js@4.4.4/+esm');
+    chartModulePromise = import('https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.esm.js');
   }
   return chartModulePromise;
 };
@@ -389,7 +389,10 @@ const bootstrap = () => {
 
   loadChart()
     .then((module) => {
-      const ChartLib = module.default;
+      const ChartLib = module.default || module.Chart;
+      if (!ChartLib) {
+        throw new Error('Chart export missing');
+      }
       containers.forEach((container) => initCalculator(ChartLib, container));
     })
     .catch((error) => {
