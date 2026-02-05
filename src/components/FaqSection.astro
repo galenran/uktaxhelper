@@ -1,0 +1,47 @@
+---
+const faqs = [
+  {
+    question: 'Is pension deducted before or after tax in the UK?',
+    answer:
+      'Most workplace schemes use salary sacrifice or relief at source, which means your pension contribution is taken from gross pay before income tax and National Insurance are applied. The calculator models the salary sacrifice approach to reflect the common arrangement.'
+  },
+  {
+    question: 'What is the difference between gross salary and take-home pay?',
+    answer:
+      'Gross salary is the amount your employer agrees to pay before deductions. Take-home pay, sometimes called net pay, is what reaches your bank account after pension contributions, income tax, and National Insurance are removed.'
+  },
+  {
+    question: 'Which tax year does this calculator cover?',
+    answer:
+      'The figures are based on HMRC 2025/26 tax bands, thresholds, and Class 1 National Insurance rules. Rates can change annually, so always compare results with official GOV.UK calculators when planning a budget.'
+  },
+  {
+    question: 'Why might my payslip show different totals?',
+    answer:
+      'Employers may include additional deductions such as student loan repayments, childcare vouchers, or company benefit adjustments. These items are not modelled here, so your payslip can differ even if the salary matches.'
+  }
+];
+---
+<section class="card" aria-labelledby="faq-heading">
+  <h2 id="faq-heading">Frequently Asked Questions</h2>
+  <div class="faq-list">
+    {faqs.map((item) => (
+      <article class="faq-item">
+        <h3>{item.question}</h3>
+        <p>{item.answer}</p>
+      </article>
+    ))}
+  </div>
+</section>
+
+<style>
+  .faq-list {
+    display: grid;
+    gap: 1.5rem;
+    margin-top: 1.25rem;
+  }
+
+  .faq-item h3 {
+    margin-bottom: 0.5rem;
+  }
+</style>

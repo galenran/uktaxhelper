@@ -1,0 +1,159 @@
+---
+import { buildTaxBreakdown, formatCurrency, formatRate } from '../utils/tax';
+
+interface Props {
+  initialSalary?: number;
+  initialPensionRate?: number;
+  headingLevel?: 'h1' | 'h2';
+}
+
+const {
+  initialSalary = 50_000,
+  initialPensionRate = 5,
+  headingLevel = 'h1'
+} = Astro.props as Props;
+const breakdown = buildTaxBreakdown(initialSalary, initialPensionRate);
+const widgetId = `calculator-${Math.round(initialSalary)}-${Math.round(initialPensionRate * 10)}`;
+const HeadingTag = headingLevel;
+const calculatorScript = new URL('../scripts/calculator.ts', import.meta.url).pathname;
+---
+<section
+  class="card"
+  data-calculator
+  id={widgetId}
+  data-initial-salary={initialSalary}
+  data-initial-pension={initialPensionRate}
+>
+  <HeadingTag>UK Salary Tax Calculator for 2025/26</HeadingTag>
+  <p class="section-copy">
+    Enter your gross annual salary and optional pension contribution to estimate take-home pay, income tax, and National Insurance for the 2025/26 UK tax year.
+  </p>
+  <form class="calculator-form" data-calculator-form>
+    <label for="salary-input">Gross annual salary (£)</label>
+    <input
+      id="salary-input"
+      name="salary"
+      type="number"
+      inputmode="decimal"
+      min="0"
+      step="500"
+      value={initialSalary}
+      aria-describedby="salary-help"
+      required
+    />
+    <label for="pension-input">Employee pension contribution (%)</label>
+    <input
+      id="pension-input"
+      name="pension"
+      type="number"
+      inputmode="decimal"
+      min="0"
+      max="60"
+      step="0.5"
+      value={initialPensionRate}
+      aria-describedby="pension-help"
+    />
+    <p id="salary-help" class="fine-print">Personal allowance taper applies once income exceeds £100,000.</p>
+    <p id="pension-help" class="fine-print">Assumes salary sacrifice; contributions reduce taxable pay before tax and NICs.</p>
+    <button type="submit" class="primary-button">Recalculate take-home pay</button>
+  </form>
+
+  <div class="ad-slot" aria-label="Advertising slot placeholder">
+    <p class="fine-print">Reserved space for display advertising. Keep results visible for AdSense compliance.</p>
+  </div>
+
+  <div class="period-toggle" role="group" aria-label="Results period">
+    <button type="button" data-period="annual" aria-pressed="true">Annual</button>
+    <button type="button" data-period="monthly" aria-pressed="false">Monthly</button>
+    <button type="button" data-period="weekly" aria-pressed="false">Weekly</button>
+  </div>
+
+  <div class="share-actions">
+    <button type="button" class="secondary-button" data-copy-results>Copy results to clipboard</button>
+    <p class="fine-print">Share key figures with your adviser or friends in one tap.</p>
+  </div>
+
+  <div class="result-grid" data-results>
+    <div class="result-card">
+      <h3>Take-home pay</h3>
+      <p class="result-value" data-field="take-home">{formatCurrency(breakdown.takeHomePay)}</p>
+      <p class="fine-print">After tax, NICs, and pension contributions.</p>
+    </div>
+    <div class="result-card">
+      <h3>Total income tax</h3>
+      <p class="result-value" data-field="income-tax">{formatCurrency(breakdown.incomeTax)}</p>
+      <p class="fine-print">Marginal bands automatically applied.</p>
+    </div>
+    <div class="result-card">
+      <h3>National Insurance</h3>
+      <p class="result-value" data-field="ni">{formatCurrency(breakdown.nationalInsurance)}</p>
+      <p class="fine-print">8% main rate, 2% above £50,270.</p>
+    </div>
+    <div class="result-card">
+      <h3>Pension contribution</h3>
+      <p class="result-value" data-field="pension">{formatCurrency(breakdown.pensionContribution)}</p>
+      <p class="fine-print">Calculated via salary sacrifice model.</p>
+    </div>
+  </div>
+
+  <section class="chart-card">
+    <h3>Income allocation</h3>
+    <canvas data-chart aria-label="Breakdown chart"></canvas>
+  </section>
+
+  <section>
+    <h3>Income tax bands</h3>
+    <table class="breakdown-table" data-band-table>
+      <thead>
+        <tr>
+          <th scope="col">Band</th>
+          <th scope="col">Rate</th>
+          <th scope="col">Taxable amount</th>
+          <th scope="col">Tax due</th>
+        </tr>
+      </thead>
+      <tbody>
+        {breakdown.taxBands.map((band) => (
+          <tr>
+            <td>{band.label}</td>
+            <td>{formatRate(band.rate)}</td>
+            <td data-field="band-taxable">{formatCurrency(band.taxablePortion)}</td>
+            <td data-field="band-due">{formatCurrency(band.taxDue)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h3>Summary (annual totals)</h3>
+    <dl>
+      <div>
+        <dt>Gross salary</dt>
+        <dd data-field="gross">{formatCurrency(breakdown.grossSalary)}</dd>
+      </div>
+      <div>
+        <dt>Salary after pension</dt>
+        <dd data-field="salary-after-pension">{formatCurrency(breakdown.salaryAfterPension)}</dd>
+      </div>
+      <div>
+        <dt>Pension contribution</dt>
+        <dd data-field="pension-annual">{formatCurrency(breakdown.pensionContribution)}</dd>
+      </div>
+      <div>
+        <dt>Personal allowance</dt>
+        <dd data-field="allowance">{formatCurrency(breakdown.personalAllowance)}</dd>
+      </div>
+      <div>
+        <dt>Taxable income</dt>
+        <dd data-field="taxable">{formatCurrency(breakdown.taxableIncome)}</dd>
+      </div>
+      <div>
+        <dt>Take-home without pension</dt>
+        <dd data-field="take-home-pre-pension">{formatCurrency(breakdown.takeHomeWithoutPension)}</dd>
+      </div>
+    </dl>
+  </section>
+</section>
+
+<script type="module" src={calculatorScript}></script>

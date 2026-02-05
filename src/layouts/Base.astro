@@ -1,0 +1,50 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  canonical?: string;
+}
+
+const {
+  title = 'UK Salary Tax Calculator | 2025/26 Take-Home Pay Estimator',
+  description = 'Understand your 2025/26 UK take-home pay with marginal tax bands, National Insurance, and the personal allowance taper explained.',
+  canonical
+} = Astro.props as Props;
+---
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {canonical && <link rel="canonical" href={canonical} />}
+  </head>
+  <body>
+    <header class="page-header">
+      <div class="wrapper">
+        <p class="site-name">UK Tax Helper</p>
+        <p class="site-tagline">Accurate 2025/26 salary calculations in seconds</p>
+      </div>
+    </header>
+    <main class="wrapper">
+      <slot />
+    </main>
+    <footer class="page-footer">
+      <div class="wrapper">
+        <nav class="footer-nav" aria-label="Legal">
+          <a href="/privacy-policy/">Privacy Policy</a>
+          <a href="/terms-of-service/">Terms of Service</a>
+          <a href="/contact/">Contact Us</a>
+        </nav>
+        <p class="fine-print">
+          Based on HMRC 2025/26 tax year data sourced from
+          <a href="https://www.gov.uk/income-tax-rates" rel="noopener" target="_blank">GOV.UK guidance</a>.
+          Figures are for information only; always confirm with official calculators.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

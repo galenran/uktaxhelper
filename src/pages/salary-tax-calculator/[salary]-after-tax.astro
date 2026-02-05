@@ -1,0 +1,52 @@
+---
+import BaseLayout from '../../layouts/Base.astro';
+import SalaryCalculator from '../../components/SalaryCalculator.astro';
+import SeoContent from '../../components/SeoContent.astro';
+import FaqSection from '../../components/FaqSection.astro';
+import { salaryTargets } from '../../utils/salaryTargets';
+import { buildTaxBreakdown, formatCurrency } from '../../utils/tax';
+
+interface Params {
+  salary: string;
+}
+
+export function getStaticPaths() {
+  return salaryTargets.map((amount) => ({
+    params: { salary: String(amount) },
+    props: { amount }
+  }));
+}
+
+interface Props {
+  amount: number;
+}
+
+const { salary } = Astro.params as Params;
+const { amount } = Astro.props as Props;
+const parsedSalary = Number.parseInt(salary, 10);
+const baseSalary = Number.isNaN(parsedSalary) ? amount : parsedSalary;
+const defaultPensionRate = 5;
+const breakdown = buildTaxBreakdown(baseSalary, defaultPensionRate);
+
+const pageTitle = `Salary after tax on £${baseSalary.toLocaleString('en-GB')} | 2025/26 UK Tax Calculator`;
+const pageDescription = `Explore annual, monthly, and weekly take-home pay on a £${baseSalary.toLocaleString('en-GB')} salary for 2025/26, including pension and marginal band analysis.`;
+const canonicalUrl = `https://uktaxhelper.co.uk/salary-tax-calculator/${baseSalary}-after-tax/`;
+---
+<BaseLayout title={pageTitle} description={pageDescription} canonical={canonicalUrl}>
+  <SalaryCalculator initialSalary={baseSalary} initialPensionRate={defaultPensionRate} headingLevel="h1" />
+
+  <section class="card" aria-labelledby="summary-heading">
+    <h2 id="summary-heading">Headline figures for £{baseSalary.toLocaleString('en-GB')}</h2>
+    <ul>
+      <li>Estimated take-home pay: <strong>{formatCurrency(breakdown.takeHomePay)}</strong></li>
+      <li>Monthly take-home estimate: <strong>{formatCurrency(breakdown.takeHomePay / 12)}</strong></li>
+      <li>Total income tax: <strong>{formatCurrency(breakdown.incomeTax)}</strong></li>
+      <li>National Insurance contributions: <strong>{formatCurrency(breakdown.nationalInsurance)}</strong></li>
+      <li>Employee pension at 5%: <strong>{formatCurrency(breakdown.pensionContribution)}</strong></li>
+    </ul>
+    <p class="fine-print">Assumes standard personal allowance and employee Class 1 NIC rates for 2025/26.</p>
+  </section>
+
+  <SeoContent />
+  <FaqSection />
+</BaseLayout>
