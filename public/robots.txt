@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://uktaxhelper.co.uk/sitemap-index.xml

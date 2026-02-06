@@ -10,7 +10,8 @@
         "check": "astro check"
     },
     "dependencies": {
-        "astro": "^4.4.0",
+        "@astrojs/sitemap": "^3.7.0",
+        "astro": "^5.17.1",
         "chart.js": "^4.4.4"
     },
     "devDependencies": {
