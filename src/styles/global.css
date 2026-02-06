@@ -68,12 +68,37 @@ body {
 }
 
 .site-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
     font-weight: 700;
     color: var(--blue-700);
     letter-spacing: 0.02em;
     margin: 0;
     text-decoration: none;
-    display: inline-block;
+}
+
+.site-name img {
+    display: block;
+    border-radius: 8px;
+}
+
+.home-hint {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: rgba(226, 232, 240, 0.6);
+    color: var(--gray-700);
+    font-size: 0.9rem;
+    padding: 0.6rem 1.5rem;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.4);
+    max-width: 880px;
+    margin: 0 auto;
+}
+
+.home-hint-icon {
+    font-size: 1.1rem;
+    line-height: 1;
 }
 
 .site-tagline {
@@ -307,7 +332,7 @@ section dl {
     margin: 1.5rem 0 0;
 }
 
-section dl > div {
+section dl>div {
     display: flex;
     justify-content: space-between;
     gap: 1rem;
@@ -315,7 +340,7 @@ section dl > div {
     padding-bottom: 0.6rem;
 }
 
-section dl > div:last-child {
+section dl>div:last-child {
     border-bottom: none;
     padding-bottom: 0;
 }

@@ -12,6 +12,8 @@ const {
   description = 'Understand your 2025/26 UK take-home pay with marginal tax bands, National Insurance, and the personal allowance taper explained.',
   canonical
 } = Astro.props as Props;
+
+const showHomeHint = Astro.url.pathname !== '/';
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -21,15 +23,29 @@ const {
     <title>{title}</title>
     <meta name="description" content={description} />
     <meta name="msvalidate.01" content="3254212A21A78C7E7CF2AF95D645125C" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png" />
+    <link rel="icon" type="image/x-icon" href="/icons/favicon-32.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon-180.png" />
+    <link rel="manifest" href="/site.webmanifest" />
     {canonical && <link rel="canonical" href={canonical} />}
   </head>
   <body>
     <header class="page-header">
       <div class="wrapper">
-        <a class="site-name" href="/">UK Tax Helper</a>
-        <p class="site-tagline">Accurate 2025/26 salary calculations in seconds</p>
+        <a class="site-name" href="/" title="Return to home">
+          <img src="/icons/uth-icon-192.png" alt="UK Tax Helper" width="28" height="28" />
+          UK Tax Helper
+        </a>
+        <p class="site-tagline">See your 2025/26 take-home tax breakdown in seconds</p>
       </div>
     </header>
+    {showHomeHint && (
+      <div class="home-hint" role="note">
+        <span class="home-hint-icon" aria-hidden="true">↖</span>
+        <span>Tip: Click the top-left logo to return to the calculator.</span>
+      </div>
+    )}
     <main class="wrapper">
       <slot />
     </main>

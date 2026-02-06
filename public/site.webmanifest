@@ -1,0 +1,21 @@
+{
+    "name": "UK Tax Helper",
+    "short_name": "UKTH",
+    "description": "UK 2025/26 salary tax calculator and take-home pay estimator.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#168bff",
+    "icons": [
+        {
+            "src": "/icons/uth-icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/icons/uth-icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
