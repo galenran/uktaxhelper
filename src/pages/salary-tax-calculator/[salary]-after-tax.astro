@@ -30,7 +30,7 @@ const breakdown = buildTaxBreakdown(baseSalary, defaultPensionRate);
 
 const pageTitle = `Salary after tax on £${baseSalary.toLocaleString('en-GB')} | 2025/26 UK Tax Calculator`;
 const pageDescription = `Explore annual, monthly, and weekly take-home pay on a £${baseSalary.toLocaleString('en-GB')} salary for 2025/26, including pension and marginal band analysis.`;
-const canonicalUrl = `https://uktaxhelper.co.uk/salary-tax-calculator/${baseSalary}-after-tax/`;
+const canonicalUrl = `https://galenran.qzz.io/salary-tax-calculator/${baseSalary}-after-tax/`;
 ---
 <BaseLayout title={pageTitle} description={pageDescription} canonical={canonicalUrl}>
   <SalaryCalculator initialSalary={baseSalary} initialPensionRate={defaultPensionRate} headingLevel="h1" />

@@ -3,6 +3,6 @@ import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
     output: 'static',
-    site: 'https://uktaxhelper.co.uk',
+    site: 'https://galenran.qzz.io',
     integrations: [sitemap()]
 });
